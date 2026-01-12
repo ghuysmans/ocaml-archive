@@ -29,6 +29,42 @@ module ListString = OUnitDiff.ListSimpleMake (struct
   let pp_print_sep = OUnitDiff.pp_comma_separator
 end)
 
+let open_unix fn =
+  let fd = Unix.openfile fn [Unix.O_RDONLY] 0 in
+  let file_size =
+    let sz = Unix.lseek fd 0 Unix.SEEK_END in
+    ignore (Unix.lseek fd 0 Unix.SEEK_SET);
+    sz
+  in
+  let file_pos = ref 0 in
+  let read fd buf =
+    let rem = file_size - !file_pos in
+    let req = min rem (Bytes.length buf) in (* FIXME? *)
+    let r = Unix.read fd buf 0 req (* FIXME interruptible *) in
+    file_pos := !file_pos + r;
+    r
+  in
+  let skip _ request =
+    file_pos := !file_pos + request;
+    request
+  in
+  let seek ofs whence =
+    prerr_endline "seek"; (* FIXME use a test file that seeks! *)
+    begin match whence with
+      | Unix.SEEK_CUR -> file_pos := !file_pos + ofs
+      | SEEK_END -> file_pos := file_size + ofs
+      | SEEK_SET -> file_pos := ofs
+    end;
+    !file_pos
+  in
+  let close fd = Unix.close fd in
+  let a = ArchiveLow.Read.create () in
+  ArchiveLow.Read.support_filter_all a;
+  ArchiveLow.Read.support_format_all a;
+  ArchiveLow.Read.set_seek_callback a seek;
+  ArchiveLow.Read.open2 a Fun.id read skip close fd;
+  a
+
 let ([] | _ :: _) =
   run_test_tt_main
     ("ocaml-archive"
@@ -103,3 +139,35 @@ let ([] | _ :: _) =
                (ExtLib.String.nsplit exp_dump "\n")
                (ExtLib.String.nsplit dump "\n") );
          ])
+
+let () = (* FIXME understand why it gets stuck when run by OUnit2 *)
+             let exp_lst, exp_dump =
+               read_tarball
+                 (Archive.Read.create
+                    (`Filename "data/ocaml-data-notation-0.0.6.tar.gz"))
+                 "ocaml-data-notation-0.0.6/_oasis"
+             in
+             let a = open_unix "data/ocaml-data-notation-0.0.6.tar.gz" in
+             let lst, dump =
+               let e = ArchiveLow.Entry.create () in
+               let target = "ocaml-data-notation-0.0.6/_oasis" in
+               let rec f lst dump =
+                 if ArchiveLow.Read.next_header2 a e then
+                   let name = ArchiveLow.Entry.pathname e in
+                   f (if String.ends_with ~suffix:"/" name then lst else name :: lst)
+                     (if name = target then
+                       let size = 2048 in
+                       let buf = String.make size '\000' in
+                       let rd = ArchiveLow.Read.data a buf 0 size in
+                       String.sub buf 0 rd
+                     else
+                       dump)
+                 else
+                   List.sort compare lst, dump
+               in
+               f [] ""
+             in
+             ListString.assert_equal ~msg:"directory listing" exp_lst lst;
+             ListString.assert_equal ~msg:"_oasis content"
+               (ExtLib.String.nsplit exp_dump "\n")
+               (ExtLib.String.nsplit dump "\n")
