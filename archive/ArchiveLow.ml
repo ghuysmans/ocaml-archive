@@ -49,7 +49,17 @@ module Entry = struct
   external create : unit -> t = "caml_archive_entry_create"
   external clone : t -> t = "caml_archive_entry_clone"
   external pathname : t -> filename = "caml_archive_entry_pathname"
+  external set_pathname : t -> filename -> unit = "caml_archive_entry_set_pathname"
   external stat : t -> Unix.LargeFile.stats = "caml_archive_entry_stat"
+  external set_perm : t -> Unix.file_perm -> unit = "caml_archive_entry_set_perm"
+  external set_filetype : t -> Unix.file_kind -> unit = "caml_archive_entry_set_filetype" (* FIXME portable consts *)
+  external set_atime : t -> float -> unit = "caml_archive_entry_set_atime"
+  external set_mtime : t -> float -> unit = "caml_archive_entry_set_mtime"
+  external set_ctime : t -> float -> unit = "caml_archive_entry_set_ctime"
+  external unset_atime : t -> float -> unit = "caml_archive_entry_unset_atime"
+  external unset_mtime : t -> float -> unit = "caml_archive_entry_unset_mtime"
+  external unset_ctime : t -> float -> unit = "caml_archive_entry_unset_ctime"
+  external set_size : t -> int64 -> unit = "caml_archive_entry_set_size"
 end
 
 module Read = struct
@@ -92,4 +102,35 @@ module Read = struct
   external data_skip : t -> unit = "caml_archive_read_data_skip"
   external data : t -> string -> int -> int -> int = "caml_archive_read_data"
   external close : t -> unit = "caml_archive_read_close"
+end
+
+module Write = struct
+  type t = [ `Write ] archive
+
+  external create : unit -> t = "caml_archive_write_create"
+  (** archive_write_new *)
+
+  external add_filter_none : t -> unit
+    = "caml_archive_write_add_filter_none"
+  (** archive_write_add_filter_none *)
+
+  external set_format_zip : t -> unit
+    = "caml_archive_write_set_format_zip"
+  (** archive_write_set_format_zip *)
+
+  external zip_set_compression_store : t -> unit
+    = "caml_archive_write_zip_set_compression_store"
+  (** archive_write_zip_set_compression_store *)
+
+  external zip_set_compression_deflate : t -> unit
+    = "caml_archive_write_zip_set_compression_deflate"
+  (** archive_write_zip_set_compression_deflate *)
+
+  external open_filename : t -> filename -> unit
+    = "caml_archive_write_open_filename"
+  (** archive_write_open_filename *)
+
+  external header : t -> Entry.t -> unit = "caml_archive_write_header"
+  external data : t -> string -> int -> int -> int = "caml_archive_write_data"
+  external close : t -> unit = "caml_archive_write_close"
 end

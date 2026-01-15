@@ -130,6 +130,8 @@ CAMLprim value caml_archive_entry_pathname (value ventry)
 /* Copied from otherlibs/unix/stat.c */
 static int file_kind_table[] = {
   S_IFREG, S_IFDIR, S_IFCHR, S_IFBLK, S_IFLNK, S_IFIFO, S_IFSOCK
+  //FIXME use portable constants or translate using this table
+  //FIXME same for caml_archive_entry_set_filetype
 };
 
 static value stat_aux(const struct stat *buf)
