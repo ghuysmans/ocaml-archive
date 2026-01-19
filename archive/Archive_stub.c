@@ -185,12 +185,13 @@ void caml_archive_finalize (value vread)
   if (ptr->archive != NULL)
   {
     archive_read_free(ptr->archive);
+    //FIXME or archive_write_free, depending on a flag
     ptr->archive = NULL;
   };
 };
 
 static struct custom_operations caml_archive_ops = {
-  "com.ocamlcore.archive.read",
+  "com.ocamlcore.archive",
   caml_archive_finalize,
   custom_compare_default,
   custom_hash_default,
