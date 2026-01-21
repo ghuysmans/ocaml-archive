@@ -26,7 +26,7 @@ module Read : sig
       * 'b read_callback
       * 'b skip_callback
       * 'b close_callback
-      * seek_callback
+      * 'b seek_callback
       (** Use callbacks to create an archive from a seekable object *)
     | `Filename of filename  (** Use a filename to create the archive *) ]
 

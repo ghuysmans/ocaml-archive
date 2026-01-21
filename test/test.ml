@@ -30,11 +30,10 @@ module ListString = OUnitDiff.ListSimpleMake (struct
 end)
 
 let unix_input fn =
-  let fd = ref None in
   `Callback_seekable (
     fn,
     (* Open callback *)
-    (fun _ -> fd := Some (Unix.openfile fn [Unix.O_RDONLY] 0); Option.get !fd),
+    (fun fn -> Unix.openfile fn [Unix.O_RDONLY] 0),
     (* Read callback *)
     (fun fd buf -> Unix.read fd buf 0 (Bytes.length buf)),
     (* Skip callback *)
@@ -44,7 +43,7 @@ let unix_input fn =
     (* Close callback *)
     (fun fd -> Unix.close fd),
     (* Seek callback *)
-    (fun ofs whence -> Unix.lseek (Option.get !fd) ofs whence)
+    Unix.lseek
   )
 
 let ([] | _ :: _) =
