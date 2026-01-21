@@ -29,19 +29,23 @@ module ListString = OUnitDiff.ListSimpleMake (struct
   let pp_print_sep = OUnitDiff.pp_comma_separator
 end)
 
-let open_unix fn =
-  let fd = Unix.openfile fn [Unix.O_RDONLY] 0 in
-  let read _ buf = Unix.read fd buf 0 (Bytes.length buf) in
-  let skip _ request =
-    ignore (Unix.lseek fd request Unix.SEEK_CUR);
-    request
-  in
-  let a = ArchiveLow.Read.create () in
-  ArchiveLow.Read.support_filter_all a;
-  ArchiveLow.Read.support_format_all a;
-  ArchiveLow.Read.set_seek_callback a (Unix.lseek fd);
-  ArchiveLow.Read.open2 a Fun.id read skip Unix.close fd;
-  a
+let unix_input fn =
+  let fd = ref None in
+  `Callback_seekable (
+    fn,
+    (* Open callback *)
+    (fun _ -> fd := Some (Unix.openfile fn [Unix.O_RDONLY] 0); Option.get !fd),
+    (* Read callback *)
+    (fun fd buf -> Unix.read fd buf 0 (Bytes.length buf)),
+    (* Skip callback *)
+    (fun fd request ->
+      ignore (Unix.lseek fd request Unix.SEEK_CUR);
+      request),
+    (* Close callback *)
+    (fun fd -> Unix.close fd),
+    (* Seek callback *)
+    (fun ofs whence -> Unix.lseek (Option.get !fd) ofs whence)
+  )
 
 let ([] | _ :: _) =
   run_test_tt_main
@@ -123,27 +127,11 @@ let ([] | _ :: _) =
                     (`Filename "data/ocaml-data-notation-0.0.6.tar.gz"))
                  "ocaml-data-notation-0.0.6/_oasis"
              in
-             let a = open_unix "data/ocaml-data-notation-0.0.6.tar.gz" in
              let lst, dump =
-               let e = ArchiveLow.Entry.create () in
-               let target = "ocaml-data-notation-0.0.6/_oasis" in
-               let rec f lst dump =
-                 if ArchiveLow.Read.next_header2 a e then
-                   let name = ArchiveLow.Entry.pathname e in
-                   f (if String.ends_with ~suffix:"/" name then lst else name :: lst)
-                     (if name = target then
-                       let size = 2048 in
-                       let buf = String.make size '\000' in
-                       let rd = ArchiveLow.Read.data a buf 0 size in
-                       String.sub buf 0 rd
-                     else
-                       dump)
-                 else
-                   List.sort compare lst, dump
-               in
-               f [] ""
+               read_tarball
+                 (Archive.Read.create (unix_input "data/ocaml-data-notation-0.0.6.tar.gz"))
+                 "ocaml-data-notation-0.0.6/_oasis"
              in
-             ArchiveLow.Read.close a;
              ListString.assert_equal ~msg:"directory listing" exp_lst lst;
              ListString.assert_equal ~msg:"_oasis content"
                (ExtLib.String.nsplit exp_dump "\n")
