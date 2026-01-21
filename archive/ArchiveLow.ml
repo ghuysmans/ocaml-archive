@@ -25,7 +25,7 @@ type 'a skip_callback = 'a -> int -> int
 (* archive_read_open2 close callback *)
 type 'a close_callback = 'a -> unit
 
-type seek_callback = int -> Unix.seek_command -> int
+type 'a seek_callback = 'a -> int -> Unix.seek_command -> int
 
 exception AEnd_of_file
 exception AFailure of error_code * string
@@ -70,9 +70,11 @@ module Read = struct
     = "caml_archive_read_open_filename"
   (** archive_read_open_filename *)
 
-  external set_seek_callback : t -> seek_callback -> unit
-    = "caml_archive_read_set_seek_callback"
-  (** archive_read_set_seek_callback *)
+  module Unsafe = struct
+    external set_seek_callback : t -> _ seek_callback -> unit
+      = "caml_archive_read_set_seek_callback"
+    (** archive_read_set_seek_callback *)
+  end
 
   external open2 :
     t ->

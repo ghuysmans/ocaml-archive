@@ -487,7 +487,7 @@ CAMLprim off_t caml_archive_seek_callback2(struct archive *ptr, struct caml_arch
 
   CAMLparam0();
   CAMLlocal1(res);
-  res = caml_callback2_exn(data->seek_cbk, Val_long(offset), Val_int(seek_command_table[whence]));
+  res = caml_callback3_exn(data->seek_cbk, data->client_data2, Val_long(offset), Val_int(seek_command_table[whence]));
   if (caml_archive_set_error(ptr, res))
   {
     ret = 0;

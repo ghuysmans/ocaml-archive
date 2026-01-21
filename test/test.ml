@@ -37,10 +37,11 @@ let open_unix fn =
     request
   in
   let a = ArchiveLow.Read.create () in
+  let close fd = Unix.close fd in
   ArchiveLow.Read.support_filter_all a;
   ArchiveLow.Read.support_format_all a;
-  ArchiveLow.Read.set_seek_callback a (Unix.lseek fd);
-  ArchiveLow.Read.open2 a Fun.id read skip Unix.close fd;
+  ArchiveLow.Read.Unsafe.set_seek_callback a seek;
+  ArchiveLow.Read.open2 a Fun.id read skip close fd;
   a
 
 let ([] | _ :: _) =
