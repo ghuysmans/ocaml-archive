@@ -30,17 +30,17 @@ module ListString = OUnitDiff.ListSimpleMake (struct
 end)
 
 let open_unix fn =
-  let fd = Unix.openfile fn [Unix.O_RDONLY] 0 in
-  let read _ buf = Unix.read fd buf 0 (Bytes.length buf) in
-  let skip _ request =
+  let open_ fn = Unix.openfile fn [Unix.O_RDONLY] 0 in
+  let read fd buf = Unix.read fd buf 0 (Bytes.length buf) in
+  let skip fd request =
     ignore (Unix.lseek fd request Unix.SEEK_CUR);
     request
   in
   let a = ArchiveLow.Read.create () in
   ArchiveLow.Read.support_filter_all a;
   ArchiveLow.Read.support_format_all a;
-  ArchiveLow.Read.set_seek_callback a (Unix.lseek fd);
-  ArchiveLow.Read.open2 a Fun.id read skip Unix.close fd;
+  ArchiveLow.Read.set_seek_callback a Unix.lseek;
+  ArchiveLow.Read.open2 a open_ read skip Unix.close fn;
   a
 
 let ([] | _ :: _) =
