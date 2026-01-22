@@ -116,9 +116,7 @@ let ([] | _ :: _) =
              ListString.assert_equal ~msg:"_oasis content"
                (ExtLib.String.nsplit exp_dump "\n")
                (ExtLib.String.nsplit dump "\n") );
-         ])
-
-let () = (* FIXME understand why it gets stuck when run by OUnit2 *)
+           ( "seek" >:: fun () ->
              let exp_lst, exp_dump =
                read_tarball
                  (Archive.Read.create
@@ -145,7 +143,9 @@ let () = (* FIXME understand why it gets stuck when run by OUnit2 *)
                in
                f [] ""
              in
+             ArchiveLow.Read.close a;
              ListString.assert_equal ~msg:"directory listing" exp_lst lst;
              ListString.assert_equal ~msg:"_oasis content"
                (ExtLib.String.nsplit exp_dump "\n")
-               (ExtLib.String.nsplit dump "\n")
+               (ExtLib.String.nsplit dump "\n") );
+         ])
