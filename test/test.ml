@@ -44,6 +44,7 @@ let open_unix fn =
   a
 
 let ([] | _ :: _) =
+  let cc = Filename.concat in
   run_test_tt_main
     ("ocaml-archive"
     >::: [
@@ -52,7 +53,7 @@ let ([] | _ :: _) =
                read_tarball
                  (Archive.Read.create
                     (`Filename "data/ocaml-data-notation-0.0.6.tar.gz"))
-                 "ocaml-data-notation-0.0.6/_oasis"
+                 (cc "ocaml-data-notation-0.0.6" "_oasis")
              in
              assert_equal ~msg:"Digest of _oasis"
                ~printer:(fun s -> s)
@@ -75,7 +76,7 @@ let ([] | _ :: _) =
                read_tarball
                  (Archive.Read.create
                     (`Filename "data/ocaml-data-notation-0.0.6.tar.gz"))
-                 "ocaml-data-notation-0.0.6/_oasis"
+                 (cc "ocaml-data-notation-0.0.6" "_oasis")
              in
              let lst, dump =
                read_tarball
@@ -83,7 +84,7 @@ let ([] | _ :: _) =
                     (`Callback
                        ( "data/ocaml-data-notation-0.0.6.tar.gz",
                          (* Open callback *)
-                         (fun fn -> open_in fn),
+                         (fun fn -> open_in_bin fn),
                          (* Read callback *)
                          (fun chn buf -> input chn buf 0 (Bytes.length buf)),
                          (* Skip callback *)
@@ -93,7 +94,7 @@ let ([] | _ :: _) =
                            pos_in chn - start),
                          (* Close callback *)
                          fun chn -> close_in chn )))
-                 "ocaml-data-notation-0.0.6/_oasis"
+                 (cc "ocaml-data-notation-0.0.6" "_oasis")
              in
              ListString.assert_equal ~msg:"directory listing" exp_lst lst;
              ListString.assert_equal ~msg:"_oasis content"
@@ -104,13 +105,13 @@ let ([] | _ :: _) =
                read_tarball
                  (Archive.Read.create
                     (`Filename "data/ocaml-data-notation-0.0.6.tar.gz"))
-                 "ocaml-data-notation-0.0.6/_oasis"
+                 (cc "ocaml-data-notation-0.0.6" "_oasis")
              in
              let lst, dump =
                Lwt_main.run
                  (read_tarball_lwt
                     (`Filename "data/ocaml-data-notation-0.0.6.tar.gz")
-                    "ocaml-data-notation-0.0.6/_oasis")
+                    (cc "ocaml-data-notation-0.0.6" "_oasis"))
              in
              ListString.assert_equal ~msg:"directory listing" exp_lst lst;
              ListString.assert_equal ~msg:"_oasis content"
@@ -121,12 +122,12 @@ let ([] | _ :: _) =
                read_tarball
                  (Archive.Read.create
                     (`Filename "data/ocaml-data-notation-0.0.6.tar.gz"))
-                 "ocaml-data-notation-0.0.6/_oasis"
+                 (cc "ocaml-data-notation-0.0.6" "_oasis")
              in
              let a = open_unix "data/ocaml-data-notation-0.0.6.tar.gz" in
              let lst, dump =
                let e = ArchiveLow.Entry.create () in
-               let target = "ocaml-data-notation-0.0.6/_oasis" in
+               let target = cc "ocaml-data-notation-0.0.6" "_oasis" in
                let rec f lst dump =
                  if ArchiveLow.Read.next_header2 a e then
                    let name = ArchiveLow.Entry.pathname e in
